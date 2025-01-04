@@ -1,5 +1,4 @@
- 
-# RCAIDE/Core/Utilities.py
+# RCAIDE/Framework/Core/Utilities.py
 # 
 # 
 # Created:  Jul 2023, M. Clarke
@@ -15,20 +14,37 @@ import numpy as np
 #  interp2d
 # ----------------------------------------------------------------------------------------------------------------------
  
-def interp2d(x,y,xp,yp,zp,fill_value= None):
+def interp2d(x, y, xp, yp, zp, fill_value=None):
     """
-    Bilinear interpolation on a grid. ``CartesianGrid`` is much faster if the data
-    lies on a regular grid.
-    Args:
-        x, y: 1D arrays of point at which to interpolate. Any out-of-bounds
-            coordinates will be clamped to lie in-bounds.
-        xp, yp: 1D arrays of points specifying grid points where function values
-            are provided.
-        zp: 2D array of function values. For a function `f(x, y)` this must
-            satisfy `zp[i, j] = f(xp[i], yp[j])`
-    Returns:
-        1D array `z` satisfying `z[i] = f(x[i], y[i])`.
-    """ 
+    Perform bilinear interpolation on a grid
+
+    Parameters
+    ----------
+    x : array_like
+        X coordinates at which to interpolate
+    y : array_like
+        Y coordinates at which to interpolate
+    xp : array_like
+        1D array of grid x coordinates
+    yp : array_like
+        1D array of grid y coordinates
+    zp : array_like
+        2D array of function values, zp[i,j] = f(xp[i], yp[j])
+    fill_value : float, optional
+        Value to use for out-of-bounds points
+        Default: None
+
+    Returns
+    -------
+    array_like
+        Interpolated values z[i] = f(x[i], y[i])
+
+    Notes
+    -----
+    - Out-of-bounds coordinates are clamped to lie in-bounds
+    - CartesianGrid is much faster if data lies on a regular grid
+    - Uses Wikipedia's notation for bilinear interpolation
+    """
     ix = np.clip(np.searchsorted(xp, x, side="right"), 1, len(xp) - 1)
     iy = np.clip(np.searchsorted(yp, y, side="right"), 1, len(yp) - 1)
 
@@ -61,26 +77,33 @@ def interp2d(x,y,xp,yp,zp,fill_value= None):
 # orientation_product
 # ----------------------------------------------------------------------------------------------------------------------
  
-def orientation_product(T,Bb):
-    """Computes the product of a tensor and a vector.
+def orientation_product(T, Bb):
+    """
+    Compute product of tensor and vector
 
-    Assumptions:
-    None
+    Parameters
+    ----------
+    T : ndarray
+        3D array with rotation matrix patterned along dimension zero
+    Bb : ndarray
+        3D or 2D vector to transform
 
-    Source:
-    N/A
+    Returns
+    -------
+    ndarray
+        Transformed vector C = T * Bb
 
-    Inputs:
-    T         [-] 3-dimensional array with rotation matrix
-                  patterned along dimension zero
-    Bb        [-] 3-dimensional vector
+    Raises
+    ------
+    AssertionError
+        If T is not 3-dimensional
+    Exception
+        If Bb has invalid dimensions
 
-    Outputs:
-    C         [-] transformed vector
-
-    Properties Used:
-    N/A
-    """            
+    Notes
+    -----
+    Uses einsum for efficient computation of tensor-vector product
+    """
     
     assert T.ndim == 3
     
@@ -98,23 +121,27 @@ def orientation_product(T,Bb):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def orientation_transpose(T):
-    """Computes the transpose of a tensor.
+    """
+    Compute transpose of a tensor
 
-    Assumptions:
-    None
+    Parameters
+    ----------
+    T : ndarray
+        3D array with rotation matrix patterned along dimension zero
 
-    Source:
-    N/A
+    Returns
+    -------
+    ndarray
+        Transposed tensor Tt
 
-    Inputs:
-    T         [-] 3-dimensional array with rotation matrix
-                  patterned along dimension zero
+    Raises
+    ------
+    AssertionError
+        If T is not 3-dimensional
 
-    Outputs:
-    Tt        [-] transformed tensor
-
-    Properties Used:
-    N/A
+    Notes
+    -----
+    Uses swapaxes to efficiently transpose dimensions 1 and 2
     """   
     
     assert T.ndim == 3
@@ -127,25 +154,28 @@ def orientation_transpose(T):
 # angles_to_dcms
 # ----------------------------------------------------------------------------------------------------------------------
 
-def angles_to_dcms(rotations,sequence=(2,1,0)):
-    """Builds an euler angle rotation matrix
-    
-    Assumptions:
-    N/A
+def angles_to_dcms(rotations, sequence=(2,1,0)):
+    """
+    Build euler angle rotation matrix
 
-    Source:
-    N/A
+    Parameters
+    ----------
+    rotations : ndarray
+        Column array of rotations [r1s r2s r3s] in radians
+    sequence : tuple, optional
+        Rotation sequence, e.g. (2,1,0), (2,1,2)
+        Default: (2,1,0)
 
-    Inputs:
-    rotations     [radians]  [r1s r2s r3s], column array of rotations
-    sequence      [-]        (2,1,0) (default), (2,1,2), etc.. a combination of three column indices
+    Returns
+    -------
+    ndarray
+        3D array with direction cosine matrices
 
-    Outputs:
-    transform     [-]        3-dimensional array with direction cosine matrices
-                             patterned along dimension zero
-
-    Properties Used:
-    N/A
+    Notes
+    -----
+    - Uses T0, T1, T2 rotation matrices based on sequence
+    - Applies rotations in reverse sequence order
+    - Returns transform patterned along dimension zero
     """         
     # transform map
     Ts = { 0:T0, 1:T1, 2:T2 }
@@ -166,22 +196,25 @@ def angles_to_dcms(rotations,sequence=(2,1,0)):
 # ----------------------------------------------------------------------------------------------------------------------  
 
 def T0(a):
-    """Rotation matrix about first axis
-    
-    Assumptions:
-    N/A
+    """
+    Create rotation matrix about first axis
 
-    Source:
-    N/A
+    Parameters
+    ----------
+    a : ndarray
+        Angle of rotation in radians
 
-    Inputs:
-    a        [radians] angle of rotation
+    Returns
+    -------
+    ndarray
+        3D rotation matrix array
 
-    Outputs:
-    T        [-]       rotation matrix
-
-    Properties Used:
-    N/A
+    Notes
+    -----
+    Matrix form:
+    [[1,   0,  0],
+     [0, cos,sin],
+     [0,-sin,cos]]
     """      
     # T = np.array([[1,   0,  0],
     #               [0, cos,sin],
@@ -204,22 +237,25 @@ def T0(a):
 # ----------------------------------------------------------------------------------------------------------------------          
 
 def T1(a):
-    """Rotation matrix about second axis
-    
-    Assumptions:
-    N/A
+    """
+    Create rotation matrix about second axis
 
-    Source:
-    N/A
+    Parameters
+    ----------
+    a : ndarray
+        Angle of rotation in radians
 
-    Inputs:
-    a        [radians] angle of rotation
+    Returns
+    -------
+    ndarray
+        3D rotation matrix array
 
-    Outputs:
-    T        [-]       rotation matrix
-
-    Properties Used:
-    N/A
+    Notes
+    -----
+    Matrix form:
+    [[cos,0,-sin],
+     [0  ,1,   0],
+     [sin,0, cos]]
     """      
     # T = np.array([[cos,0,-sin],
     #               [0  ,1,   0],
@@ -242,22 +278,25 @@ def T1(a):
 # ----------------------------------------------------------------------------------------------------------------------  
 
 def T2(a):
-    """Rotation matrix about third axis
-    
-    Assumptions:
-    N/A
+    """
+    Create rotation matrix about third axis
 
-    Source:
-    N/A
+    Parameters
+    ----------
+    a : ndarray
+        Angle of rotation in radians
 
-    Inputs:
-    a        [radians] angle of rotation
+    Returns
+    -------
+    ndarray
+        3D rotation matrix array
 
-    Outputs:
-    T        [-]       rotation matrix
-
-    Properties Used:
-    N/A
+    Notes
+    -----
+    Matrix form:
+    [[cos ,sin,0],
+     [-sin,cos,0],
+     [0   ,0  ,1]]
     """      
     # T = np.array([[cos ,sin,0],
     #               [-sin,cos,0],
@@ -280,23 +319,29 @@ def T2(a):
 # ----------------------------------------------------------------------------------------------------------------------  
 
 def new_tensor(a):
-    """Initializes the required tensor. Able to handle imaginary values.
-    
-    Assumptions:
-    N/A
+    """
+    Initialize tensor with identity matrices
 
-    Source:
-    N/A
+    Parameters
+    ----------
+    a : ndarray
+        1D array of angles in radians
 
-    Inputs:
-    a        [radians] angle of rotation
+    Returns
+    -------
+    ndarray
+        3D array with identity matrices patterned along dimension zero
 
-    Outputs:
-    T        [-]       3-dimensional array with identity matrix
-                       patterned along dimension zero
+    Raises
+    ------
+    AssertionError
+        If input is not 1-dimensional
 
-    Properties Used:
-    N/A
+    Notes
+    -----
+    - Creates array of 3x3 identity matrices
+    - Handles both real and complex values
+    - Number of matrices matches length of input array
     """      
     assert a.ndim == 1
     n_a = len(a)

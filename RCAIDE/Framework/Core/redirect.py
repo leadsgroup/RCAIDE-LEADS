@@ -1,4 +1,4 @@
-# redirect.py
+# RCAIDE/Framework/Core/redirect.py
 #
 # Created:  Aug 2015, T. Lukacyzk
 # Modified: Feb 2016, T. MacDonald
@@ -11,44 +11,53 @@ import os, sys, shutil, copy
 
 # -------------------------------------------------------------------
 #  Output Redirection 
-# ------------------------------------------------------------------- 
+# -------------------------------------------------------------------
+
+## @ingroup Core
 class output(object):
-    """ Temporarily redirects sys.stdout and sys.stderr when used in
-        a 'with' contextmanager
-        
-        Example:
-        with SU2.io.redirect_output('stdout.txt','stderr.txt'):
-            sys.stdout.write("standard out")
-            sys.stderr.write("stanrard error")
-            # code
-        #: with output redirection
-        
-        Inputs:
-            stdout - None, a filename, or a file stream
-            stderr - None, a filename, or a file stream
-        None will not redirect outptut
-        
-        Source:
-        http://stackoverflow.com/questions/6796492/python-temporarily-redirect-stdout-stderr
-        
+    """
+    Context manager for redirecting stdout and stderr streams
+
+    Parameters
+    ----------
+    stdout : None, str, or file-like object
+        Destination for stdout redirection
+        If str, opens file with that name
+        If None, no redirection
+    stderr : None, str, or file-like object
+        Destination for stderr redirection
+        If str, opens file with that name
+        If None, no redirection
+
+    Notes
+    -----
+    Used with 'with' statement to temporarily redirect output streams.
+    Automatically restores original streams when exiting context.
+
+    Examples
+    --------
+    >>> with redirect.output('out.txt', 'err.txt'):
+    ...     print("Redirected stdout")
+    ...     sys.stderr.write("Redirected stderr")
+
+    References
+    ----------
+    - http://stackoverflow.com/questions/6796492/python-temporarily-redirect-stdout-stderr
     """
     def __init__(self, stdout=None, stderr=None):
-        """ Initializes a new output() class
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
+        """
+        Initialize output redirection
+
+        Parameters
+        ----------
+        stdout : None, str, or file-like object
+            Destination for stdout redirection
+        stderr : None, str, or file-like object
+            Destination for stderr redirection
+
+        Notes
+        -----
+        Opens files if string paths provided
         """         
         
         _newout = False
@@ -67,11 +76,38 @@ class output(object):
         self._newerr = _newerr
 
     def __enter__(self):
+        """
+        Set up redirection on context entry
+
+        Notes
+        -----
+        - Stores original stdout/stderr
+        - Flushes streams
+        - Sets new stdout/stderr
+        """
         self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
         self.old_stdout.flush(); self.old_stderr.flush()
         sys.stdout, sys.stderr = self._stdout, self._stderr
 
     def __exit__(self, exc_type, exc_value, traceback):
+        """
+        Restore original streams on context exit
+
+        Parameters
+        ----------
+        exc_type : type
+            Type of exception that occurred, if any
+        exc_value : Exception
+            Exception instance that occurred, if any
+        traceback : traceback
+            Traceback of exception that occurred, if any
+
+        Notes
+        -----
+        - Flushes redirected streams
+        - Restores original stdout/stderr
+        - Closes opened files
+        """
         self._stdout.flush(); self._stderr.flush()
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
@@ -84,44 +120,37 @@ class output(object):
 
 # -------------------------------------------------------------------
 #  Folder Redirection 
-# ------------------------------------------------------------------- 
+# -------------------------------------------------------------------
+
+## @ingroup Core
 class folder(object):
-    """ Temporarily redirects to a working folder, pulling 
-        and pushing needed files
-        
-        Example:
-        
-        folder = 'temp'                    
-        pull   = ['file1.txt','file2.txt'] 
-        link   = ['file3.big']             
-        force  = True                      
-        
-        # original path
-        import os
-        print os.getcwd()
-        
-        # enter folder
-        with SU2.io.redirect_folder(folder,pull,link,force) as push:
-            print os.getcwd()
-            # code
-            push.append('file4.txt')
-        #: with folder redirection
-        
-        # returned to original path
-        print os.getcwd()
-        
-        Inputs:
-            folder - working folder, relative or absolute
-            pull   - list of files to pull (copy to working folder)
-            link   - list of files to link (symbolic link in working folder)
-            force  - True/False overwrite existing files in working folder
-        
-        Targets:
-            push   - list of files to push (copy to originating path)
-        
-        Notes:
-            push must be appended or extended, not overwritten
-            links in Windows not supported, will simply copy
+    """
+    Context manager for working directory operations
+
+    Parameters
+    ----------
+    folder : str
+        Working directory path
+    pull : list, optional
+        Files to copy to working folder
+        Default: []
+    link : list, optional
+        Files to symbolically link in working folder
+        Default: []
+    force : bool, optional
+        Whether to overwrite existing files
+        Default: True
+
+    Notes
+    -----
+    Temporarily changes working directory while handling file operations.
+    Must append or extend push list, not overwrite.
+
+    Examples
+    --------
+    >>> with redirect.folder('temp', ['input.txt'], force=True) as push:
+    ...     # Working in temp directory
+    ...     push.append('output.txt')  # Will be copied back
     """
     
     def __init__(self, folder, pull=None, link=None, force=True ):
@@ -231,13 +260,26 @@ class folder(object):
         
   
 def make_link(src,dst):
-    """ make_link(src,dst)
-        makes a relative link
-        Inputs:
-            src - source file
-            dst - destination to place link
-        
-        Windows links currently unsupported, will copy file instead
+    """
+    Create a relative symbolic link
+
+    Parameters
+    ----------
+    src : str
+        Source file path
+    dst : str
+        Destination link path
+
+    Raises
+    ------
+    AssertionError
+        If source file does not exist
+
+    Notes
+    -----
+    - Makes relative symbolic links on Unix systems
+    - Falls back to copying file on Windows
+    - Removes existing destination if present
     """
     
     assert os.path.exists(src) , 'source file does not exist \n%s' % src

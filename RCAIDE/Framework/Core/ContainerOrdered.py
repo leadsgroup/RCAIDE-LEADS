@@ -18,96 +18,87 @@ from .DataOrdered import DataOrdered
 # ----------------------------------------------------------------------        
 
 class ContainerOrdered(DataOrdered):
-    """ A dict-type container with attribute, item and index style access
-        intended to hold a attribute-accessible list of DataOrdered(). This is ordered.
-        
-        Assumptions:
-        N/A
-        
-        Source:
-        N/A
-        
+    """
+    An ordered container for managing collections of DataOrdered objects
+
+    Parameters
+    ----------
+    args : tuple
+        Positional arguments passed to DataOrdered parent
+    kwargs : dict
+        Keyword arguments passed to DataOrdered parent
+
+    Attributes
+    ----------
+    tag : str
+        Identifier for container instance
+    _root : Property
+        Root node for ordered structure
+    _map : Property
+        Mapping of keys to nodes
+
+    Methods
+    -------
+    append(value)
+        Add new value maintaining insertion order
+    get_children()
+        Get list of allowed child components
+
+    Notes
+    -----
+    - Maintains insertion order of components
+    - Provides attribute-style and index access
+    - For unordered storage use Container class
+
+    **Major Assumptions**
+    * Components have tag attributes
+    * Order of insertion matters
     """
         
     def __defaults__(self):
-        """Defaults function
-    
-            Assumptions:
-            None
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A
-            """          
+        """
+        Set default values for ordered container
+
+        Notes
+        -----
+        Base implementation does nothing
+        Subclasses should override to set defaults
+        """          
         pass
     
     def __init__(self,*args,**kwarg):
-        """Initialization that builds the container
-    
-            Assumptions:
-            None
-    
-            Source:
-            N/A
-    
-            Inputs:
-            self
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A
-            """           
+       
         super(ContainerOrdered,self).__init__(*args,**kwarg)
         self.__defaults__()
     
-    def append(self,val):
-        """Appends the value to the containers
-    
-            Assumptions:
-            None
-    
-            Source:
-            N/A
-    
-            Inputs:
-            self
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A
-            """          
-        #val = self.check_new_val(val)
-        DataOrdered.append(self,val)
+    def append(self, val):
+        """
+        Add new value maintaining insertion order
+
+        Parameters
+        ----------
+        val : DataOrdered
+            Value to append, must have tag attribute
+
+        Notes
+        -----
+        - Maintains order of insertion
+        - Uses DataOrdered append mechanism
+        """
+        DataOrdered.append(self, val)
         
     def get_children(self):
-        """ Returns the components that can go inside
-        
-        Assumptions:
-        None
-    
-        Source:
-        N/A
-    
-        Inputs:
-        None
-    
-        Outputs:
-        None
-    
-        Properties Used:
-        N/A
-        """        
-        
+        """
+        Get list of allowed child components
+
+        Returns
+        -------
+        list
+            Empty list in base implementation
+
+        Notes
+        -----
+        Subclasses should override to specify allowed children
+        Used for validation of container contents
+        """
         return []  

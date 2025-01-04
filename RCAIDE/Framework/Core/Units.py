@@ -2,16 +2,66 @@ import math
 
 class _Units:
     """
-    A container for unit conversions to SI (or SI-derived) units.
-    Multiplying a value by one of these factors converts that value
-    into the chosen SI base/derived unit.
+    A container for unit conversions to SI (or SI-derived) units
 
-    For example:
-        34 * Units.lbs   -> kg
-        5  * Units.btu   -> J
-        10 * Units.lbf   -> N
+    Parameters
+    ----------
+    None
+
+    Attributes
+    ----------
+    _conversions : dict
+        Dictionary mapping unit names to SI conversion factors, containing:
+        
+        Mass
+            - 'lbs' : Pounds to kg
+            - 'slug' : Slug to kg
+            - 'kg' : Kilogram (no conversion)
+            
+        Length
+            - 'ft' : Feet to m
+            - 'inch' : Inches to m
+            - 'nmi' : Nautical miles to m
+            
+        Speed
+            - 'kts' : Knots to m/s
+            - 'mph' : Miles per hour to m/s
+            
+        Force
+            - 'lbf' : Pound force to N
+            - 'N' : Newton (no conversion)
+            
+        Pressure
+            - 'psi' : Pounds per square inch to Pa
+            - 'kPa' : Kilopascal to Pa
+            
+        Temperature
+            - 'degF' : Fahrenheit to K
+            - 'degR' : Rankine to K
+            - 'K' : Kelvin (no conversion)
+
+    Methods
+    -------
+    __getattr__(name)
+        Access conversion factors using attribute notation
+    __getitem__(name)
+        Access conversion factors using dictionary notation
+
+    Notes
+    -----
+    Multiplying a value by a conversion factor converts that value 
+    into the corresponding SI base/derived unit.
+
+    Examples
+    --------
+    >>> mass_kg = 100 * Units.lbs  # Convert 100 lbs to kg
+    >>> speed_ms = 120 * Units.kts  # Convert 120 knots to m/s
+    >>> temp_k = 98.6 * Units.degF  # Convert 98.6°F to K
+
+    See Also
+    --------
+    Units : Global instance of _Units for convenient access
     """
-    
 
     _conversions = {
         # ------------------------------------------------
@@ -295,14 +345,58 @@ class _Units:
     }
 
     def __getattr__(self, name: str) -> float:
-        """Allows attribute-like access, e.g. Units.lbs"""
+        """
+        Access conversion factors using attribute notation
+
+        Parameters
+        ----------
+        name : str
+            Name of unit to convert from
+
+        Returns
+        -------
+        float
+            Conversion factor to SI units
+
+        Raises
+        ------
+        AttributeError
+            If unit name is not defined
+
+        Examples
+        --------
+        >>> Units.lbs  # Access pounds to kg conversion
+        0.45359237
+        """
         try:
             return self._conversions[name]
         except KeyError:
             raise AttributeError(f"Unit '{name}' is not defined.")
 
     def __getitem__(self, name: str) -> float:
-        """Allows dict/key-like access, e.g. Units['lbs']"""
+        """
+        Access conversion factors using dictionary notation
+
+        Parameters
+        ----------
+        name : str
+            Name of unit to convert from
+
+        Returns
+        -------
+        float
+            Conversion factor to SI units
+
+        Raises
+        ------
+        KeyError
+            If unit name is not defined
+
+        Examples
+        --------
+        >>> Units['lbs']  # Access pounds to kg conversion
+        0.45359237
+        """
         try:
             return self._conversions[name]
         except KeyError:
@@ -311,5 +405,19 @@ class _Units:
 
 # A globally available instance:
 Units = _Units()
+"""
+Global instance of _Units class for convenient access to unit conversions
+
+Notes
+-----
+This is the main interface for accessing unit conversions.
+Import and use this class rather than _Units directly.
+
+Examples
+--------
+>>> from RCAIDE.Framework.Core import Units
+>>> mass_kg = 10 * Units.lbs  # Convert 10 pounds to kg
+>>> speed_ms = 100 * Units.kts  # Convert 100 knots to m/s
+"""
 
    

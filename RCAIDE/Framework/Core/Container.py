@@ -1,5 +1,4 @@
-
-# RCAIDE/Core/Container.py
+# RCAIDE/Framework/Core/Container.py
 # 
 # 
 # Created:  Jul 2023, M. Clarke 
@@ -22,80 +21,72 @@ t_table = str.maketrans( chars          + string.ascii_uppercase ,
 # ----------------------------------------------------------------------------------------------------------------------   
 
 class Container(Data):
-    # """ A dict-type container with attribute, item and index style access
-    #     intended to hold a attribute-accessible list of Data(). This is unordered.
-        
-    #     Assumptions:
-    #     N/A
-        
-    #     Source:
-    #     N/A
-        
-    # """
-            
-        
+    """
+    A dictionary-based container for managing collections of Data objects
+
+    Parameters
+    ----------
+    args : tuple
+        Positional arguments passed to Data parent
+    kwargs : dict
+        Keyword arguments passed to Data parent
+
+    Attributes
+    ----------
+    tag : str
+        Identifier for container instance
+
+    Methods
+    -------
+    append(value)
+        Add new value with automatic tag handling
+    extend(vals)
+        Append multiple values from list, tuple or dict
+    get_children()
+        Get list of allowed child components
+
+    Notes
+    -----
+    - Unordered container with attribute-style access
+    - Handles duplicate component names by modifying tags
+    - For ordered storage use ContainerOrdered class
+
+    **Major Assumptions**
+    * Components have tag attributes
+    * Duplicate tags are resolved by appending numbers
+    """
+
     def __defaults__(self):
-        # """ Defaults function
-    
-        #     Assumptions:
-        #     None
-        
-        #     Source:
-        #     N/A
-        
-        #     Inputs:
-        #     N/A
-        
-        #     Outputs:
-        #     N/A
-            
-        #     Properties Used:
-        #     N/A
-        # """          
+        """
+        Set default values for container
+
+        Notes
+        -----
+        Base implementation does nothing
+        Subclasses should override to set defaults
+        """
         pass
-    
+
     def __init__(self,*args,**kwarg):
-        # """ Initialization that builds the container
         
-        #     Assumptions:
-        #     None
-        
-        #     Source:
-        #     N/A
-        
-        #     Inputs:
-        #     self
-        
-        #     Outputs:
-        #     N/A
-            
-        #     Properties Used:
-        #     N/A
-        # """          
         super(Container,self).__init__(*args,**kwarg)
         self.__defaults__()
     
-    def append(self,val):
-        # """ Appends the value to the containers
-        #     This overrides the Data class append by allowing for duplicate named components
-        #     The following components will get new names.
-        
-        #     Assumptions:
-        #     None
-        
-        #     Source:
-        #     N/A
-        
-        #     Inputs:
-        #     self
-        
-        #     Outputs:
-        #     N/A
-            
-        #     Properties Used:
-        #     N/A
-        # """           
-        
+    def append(self, val):
+        """
+        Add new value with automatic tag handling
+
+        Parameters
+        ----------
+        val : Data
+            Value to append, must have tag attribute
+
+        Notes
+        -----
+        - Translates tag to valid Python identifier
+        - Handles duplicate tags by appending numbers
+        - Falls back to random number if still duplicate
+        """
         # See if the item tag exists, if it does modify the name
         keys = self.keys()
         
@@ -105,30 +96,31 @@ class Container(Data):
             n_comps = string_of_keys.count(val.tag)
             val.tag = tag + str(n_comps+1)
             
-            # Check again, because theres an outside chance that its duplicate again. Then assign a random
+            # Check again, because theres an outside chance that its duplicate again
             if val.tag in keys:
                 val.tag = tag + str(n_comps+random.randint(0,1000))
         
         Data.append(self,val)
         
-    def extend(self,vals):
-        # """ Append things regressively depending on what is inside.
-    
-        #     Assumptions:
-        #     None
-        
-        #     Source:
-        #     N/A
-        
-        #     Inputs:
-        #     self
-        
-        #     Outputs:
-        #     N/A
-            
-        #     Properties Used:
-        #     N/A
-        # """         
+    def extend(self, vals):
+        """
+        Append multiple values from list, tuple or dict
+
+        Parameters
+        ----------
+        vals : list, tuple, or dict
+            Values to append
+
+        Raises
+        ------
+        Exception
+            If vals is not list, tuple or dict
+
+        Notes
+        -----
+        - Lists/tuples: appends each value
+        - Dicts: updates container with dict items
+        """
         if isinstance(vals,(list,tuple)):
             for v in val: self.append(v)
         elif isinstance(vals,dict):
@@ -137,22 +129,17 @@ class Container(Data):
             raise Exception('unrecognized data type')
         
     def get_children(self):
-        # """ Returns the components that can go inside
-        
-        # Assumptions:
-        # None
-    
-        # Source:
-        # N/A
-    
-        # Inputs:
-        # None
-    
-        # Outputs:
-        # None
-    
-        # Properties Used:
-        # N/A
-        # """        
-        
+        """
+        Get list of allowed child components
+
+        Returns
+        -------
+        list
+            Empty list in base implementation
+
+        Notes
+        -----
+        Subclasses should override to specify allowed children
+        Used for validation of container contents
+        """
         return []    

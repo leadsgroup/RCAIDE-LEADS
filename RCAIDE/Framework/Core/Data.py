@@ -1,4 +1,4 @@
-# Data.py
+# RCAIDE/Framework/Core/Data.py
 #
 # Created:  Jun 2016, E. Botero
 # Modified: Jan 2020, M. Clarke
@@ -30,59 +30,94 @@ objgetattrib = object.__getattribute__
 # ----------------------------------------------------------------------
 #   Data
 # ----------------------------------------------------------------------        
+
+## @ingroup Core
 class Data(dict):
-    """ An extension of the Python dict which allows for both tag and '.' usage.
-        This is an unordered dictionary. So indexing it will not produce deterministic results.
-        This has less overhead than ordering. If ordering is needed use DataOrdered().
-       
-        Assumptions:
-        N/A
-        
-        Source:
-        N/A
+    """
+    A dictionary-based data structure with attribute-style access
+
+    Parameters
+    ----------
+    *args : tuple
+        Positional arguments passed to dict
+    **kwargs : dict
+        Keyword arguments passed to dict
+
+    Attributes
+    ----------
+    tag : str, optional
+        Identifier for data instance
+
+    Methods
+    -------
+    __getattribute__(k)
+        Get attribute by key or object attribute
+    __setattr__(k, v)
+        Set attribute or dictionary item
+    append(value, key=None)
+        Add new value with optional key
+    update(other)
+        Update with values from other dictionary
+    deep_set(keys, val)
+        Set nested value using dot notation
+    deep_get(keys)
+        Get nested value using dot notation
+    get_bases()
+        Get list of base classes
+    pack_array(output)
+        Convert to array format
+    unpack_array(M)
+        Convert from array format
+
+    Notes
+    -----
+    - Provides both dictionary and attribute-style access
+    - Supports nested data structures
+    - Handles array packing/unpacking
+    - For ordered storage use DataOrdered class
+
+    **Major Assumptions**
+    * Keys are valid Python identifiers
+    * Values can be accessed as attributes
     """
     
     def __getattribute__(self, k):
-        """ Retrieves an attribute set by a key k
-    
-            Assumptions:
-            Does a try if it is a dict, but if that fails treats it as an object
-    
-            Source:
-            N/A
-    
-            Inputs:
-            k
-    
-            Outputs:
-            whatever is found by k
-    
-            Properties Used:
-            N/A
-            """         
+        """
+        Get attribute by key or object attribute
+
+        Parameters
+        ----------
+        k : str
+            Key/attribute name to retrieve
+
+        Returns
+        -------
+        value
+            Value stored at key k
+
+        Notes
+        -----
+        Tries dictionary access first, falls back to object attribute
+        """
         try:
             return dictgetitem(self,k)
         except:
             return objgetattrib(self,k)
 
     def __setattr__(self, k, v):
-        """ An override of the standard __setattr_ in Python.
-            
-            Assumptions:
-            This one tries to treat k as an object, if that fails it treats it as a key.
-    
-            Source:
-            N/A
-    
-            Inputs:
-            k        [key]
-            v        [value]
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
+        """
+        Set attribute or dictionary item
+
+        Parameters
+        ----------
+        k : str
+            Key/attribute name to set
+        v : any
+            Value to store
+
+        Notes
+        -----
+        Tries object attribute first, falls back to dictionary key
         """
         try:
             objgetattrib(self, k)
@@ -90,45 +125,61 @@ class Data(dict):
             self[k] = v
         else:          
             object.__setattr__(self, k, v) 
+            
+    def __delattr__(self, k):
+        """
+        Delete attribute or dictionary item
+
+        Parameters
+        ----------
+        k : str
+            Key/attribute name to delete
+
+        Notes
+        -----
+        - Tries object attribute first, falls back to dictionary key
+        - Updates internal structure when deleting
+        """
+        try:
+            objgetattrib(self, k)
+        except:
+            del self[k]
+        else:
+            object.__delattr__(self, k)
     
     def __defaults__(self):
-        """ A stub for all classes that come later
-            
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """              
+        """
+        Set default values for data structure
+
+        Notes
+        -----
+        Base implementation does nothing
+        Subclasses should override to set defaults
+        """
         pass      
     
-    def __new__(cls,*args,**kwarg):
-        """ Creates a new Data() class
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """         
+    def __new__(cls, *args, **kwarg):
+        """
+        Create new Data instance with defaults
+
+        Parameters
+        ----------
+        args : tuple
+            Positional arguments
+        kwarg : dict
+            Keyword arguments
+
+        Returns
+        -------
+        self : Data
+            New instance with defaults applied
+
+        Notes
+        -----
+        - Creates empty data structure
+        - Applies defaults from all base classes
+        - Processes from most basic to most derived class
+        """
         
         
         # initialize data, no inputs
@@ -195,24 +246,26 @@ class Data(dict):
         return "<data object '" + self.typestring() + "'>"     
     
     
-    def __str__(self,indent=''):
-        """ This function is used for printing the class. This starts the first line of printing.
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """         
+    def __str__(self, indent=''):
+        """
+        Get string representation of data structure
+
+        Parameters
+        ----------
+        indent : str, optional
+            Indentation prefix for formatting
+            Default: ''
+
+        Returns
+        -------
+        str
+            Formatted string showing data contents
+
+        Notes
+        -----
+        - Skips items starting with underscore
+        - Uses __str2() for nested content formatting
+        """
         
         new_indent = '  '
         args = ''
@@ -228,24 +281,27 @@ class Data(dict):
         return args    
     
     
-    def __str2(self,indent=''):
-        """ This regresses through and does the rest of printing that __str__ missed
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """     
+    def __str2(self, indent=''):
+        """
+        Helper function for recursive string formatting
+
+        Parameters
+        ----------
+        indent : str, optional
+            Indentation prefix for formatting
+            Default: ''
+
+        Returns
+        -------
+        str
+            Formatted string of nested contents
+
+        Notes
+        -----
+        - Handles recursive data structures
+        - Skips 'hidden' items starting with underscore
+        - Adds indentation for nested levels
+        """
         
         new_indent = '  '
         args = ''
@@ -281,27 +337,24 @@ class Data(dict):
             
         return args        
     
-    def __init__(self,*args,**kwarg):
-        """ :meta private:"""
-        # """ 
-        #     Initializes a new Data() class
-    
-        #     Assumptions:
-        #     N/A
-    
-        #     Source:
-        #     N/A
-    
-        #     Inputs:
-        #     N/A
-    
-        #     Outputs:
-        #     N/A
-    
-        #     Properties Used:
-        #     N/A    
-        # """           
+    def __init__(self, *args, **kwarg):
+        """
+        Initialize new Data instance
 
+        Parameters
+        ----------
+        args : tuple
+            Positional arguments passed to dict
+        kwarg : dict
+            Keyword arguments passed to dict
+
+        Notes
+        -----
+        - Creates input data using base class
+        - Updates self with input data
+        - Preserves attribute-style access
+        """
+        
         # handle input data (ala class factory)
         input_data = Data.__base__(*args,**kwarg)
         
@@ -309,88 +362,85 @@ class Data(dict):
         self.update(input_data)    
 
     def __iter__(self):
-        """ :meta private:"""
-        # """ Returns all the iterable values. Can be used in a for loop.
-    
-        #     Assumptions:
-        #     N/A
-    
-        #     Source:
-        #     N/A
-    
-        #     Inputs:
-        #     N/A
-    
-        #     Outputs:
-        #     N/A
-    
-        #     Properties Used:
-        #     N/A    
-        # """           
+        """
+        Get iterator over values
+
+        Returns
+        -------
+        iterator
+            Iterator yielding values in order
+
+        Notes
+        -----
+        Iterates over values rather than keys
+        """
         return iter(self.values())
-       
+    
+    def itervalues(self):
+        """
+        Get iterator over values
+
+        Returns
+        -------
+        iterator
+            Iterator yielding values in order
+
+        Notes
+        -----
+        Legacy method for Python 2 compatibility
+        """
+        for k in super(Data,self).__iter__():
+            yield self[k]   
     
     def values(self):
-        """ :meta private:"""
-        # """ Returns all values inside the Data() class.
-    
-        #     Assumptions:
-        #     N/A
-    
-        #     Source:
-        #     N/A
-    
-        #     Inputs:
-        #     N/A
-    
-        #     Outputs:
-        #     values
-    
-        #     Properties Used:
-        #     N/A    
-        # """          
+        """
+        Get list of all values
+
+        Returns
+        -------
+        list
+            List of all values in data structure
+
+        Notes
+        -----
+        Uses internal __values() method
+        """
         return self.__values()          
             
     def __values(self):
-        """ :meta private:"""
-        #  Iterates over all keys to find all the data values.
-    
-        #     Assumptions:
-        #     N/A
-    
-        #     Source:
-        #     N/A
-    
-        #     Inputs:
-        #     N/A
-    
-        #     Outputs:
-        #     values
-    
-        #     Properties Used:
-        #     N/A    
-        #            
+        """
+        Get list of all values
+
+        Returns
+        -------
+        list
+            List of values for all keys
+
+        Notes
+        -----
+        Internal implementation for values() method
+        """
         return [self[key] for key in super(Data,self).__iter__()]    
     
     def update(self,other):
-        """ :meta private:"""
-        # """ Updates the internal values of a dictionary with given data
-    
-        #     Assumptions:
-        #     N/A
-    
-        #     Source:
-        #     N/A
-    
-        #     Inputs:
-        #     other
-    
-        #     Outputs:
-        #     N/A
-    
-        #     Properties Used:
-        #     N/A    
-        # """           
+        """
+        Update with values from other dictionary
+
+        Parameters
+        ----------
+        other : dict
+            Dictionary to update from
+
+        Raises
+        ------
+        TypeError
+            If input is not a dictionary
+
+        Notes
+        -----
+        - Recursively updates nested structures
+        - Skips keys starting with underscore
+        """
         if not isinstance(other,dict):
             raise TypeError('input is not a dictionary type')
         for k,v in other.items():
@@ -405,23 +455,23 @@ class Data(dict):
         return 
     
     def get_bases(self):
-        """ Finds the higher classes that may be built off of data
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            klasses
-    
-            Properties Used:
-            N/A    
-        """          
+        """
+        Get list of base classes
+
+        Returns
+        -------
+        list
+            List of ancestor classes excluding dict and object
+
+        Raises
+        ------
+        TypeError
+            If class is not derived from Data
+
+        Notes
+        -----
+        Uses method resolution order to get ancestor tree
+        """
         # Get the Method Resolution Order, i.e. the ancestor tree
         klasses = list(self.__class__.__mro__)
         
@@ -435,48 +485,54 @@ class Data(dict):
         return klasses    
     
     def append(self,value,key=None):
-        """ Adds new values to the classes. Can also change an already appended key
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            value
-            key
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """          
+        """
+        Add new value with optional key
+
+        Parameters
+        ----------
+        value : any
+            Value to append
+        key : str, optional
+            Key to use, defaults to value.tag
+
+        Raises
+        ------
+        KeyError
+            If key already exists
+
+        Notes
+        -----
+        - Uses value.tag as default key
+        - Translates key to valid Python identifier
+        """
         if key is None: key = value.tag
         key = key.translate(t_table)
         if key in self: raise KeyError('key "%s" already exists' % key)
         self[key] = value        
     
-    def deep_set(self,keys,val):
-        """ Regresses through a list of keys the same value in various places in a dictionary.
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            keys  - The keys to iterate over
-            val   - The value to be set
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """               
+    def deep_set(self, keys, val):
+        """
+        Set nested value using dot notation
+
+        Parameters
+        ----------
+        keys : str or list
+            Key path using dot notation (e.g. 'a.b.c')
+            Can include array indexing with brackets
+        val : any
+            Value to set
+
+        Returns
+        -------
+        data
+            Reference to modified data structure
+
+        Notes
+        -----
+        - Supports array indexing with bracket notation
+        - Creates path if it doesn't exist
+        - Can set values in nested arrays
+        """
         
         if isinstance(keys,str):
             keys = keys.split('.')
@@ -500,24 +556,25 @@ class Data(dict):
             
         return data
 
-    def deep_get(self,keys):
-        """ Regresses through a list of keys to pull a specific value out
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            keys  - The keys to iterate over
-            
-            Outputs:
-            value - The value to be retrieved
-    
-            Properties Used:
-            N/A    
-        """          
+    def deep_get(self, keys):
+        """
+        Get nested value using dot notation
+
+        Parameters
+        ----------
+        keys : str or list
+            Key path using dot notation (e.g. 'a.b.c')
+
+        Returns
+        -------
+        value
+            Value at specified path
+
+        Notes
+        -----
+        - Splits string keys on dots
+        - Traverses nested dictionaries
+        """
         
         if isinstance(keys,str):
             keys = keys.split('.')
@@ -533,27 +590,24 @@ class Data(dict):
         return value
         
     def pack_array(self,output='vector'):
-        """ maps the data dict to a 1D vector or 2D column array
-        
-            Assumptions:
-                will only pack int, float, np.array and np.matrix (max rank 2)
-                if using output = 'matrix', all data values must have 
-                same length (if 1D) or number of rows (if 2D), otherwise is skipped
-    
-            Source:
-            N/A
-    
-            Inputs:
-                output - either 'vector' (default), or 'array'
-                         chooses whether to output a 1d vector or 
-                         2d column array
-            
-            Outputs:
-                array - the packed array
-    
-            Properties Used:
-            N/A  
-        
+        """
+        Convert dictionary data to array format
+
+        Parameters
+        ----------
+        output : {'vector', 'array'}, optional
+            Output format
+            Default: 'vector'
+
+        Returns
+        -------
+        ndarray
+            Packed data in specified format
+
+        Notes
+        -----
+        - Only packs numeric types and arrays up to rank 2
+        - For 'array' output, all values must have same number of rows
         """
         
         
@@ -619,26 +673,25 @@ class Data(dict):
         return M
     
     def unpack_array(self,M):
-        """ unpacks an input 1d vector or 2d column array into the data dictionary
-            important that the structure of the data dictionary, and the shapes
-            of the contained values are the same as the data from which the array was packed
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            M - either a 1D vector or 2D column array
-            
-            Outputs:
-            a reference to self, updates self in place
-    
-            Properties Used:
-            N/A    
-        """           
+        """
+        Convert array data back to dictionary format
 
+        Parameters
+        ----------
+        M : ndarray
+            Array to unpack into data structure
+
+        Returns
+        -------
+        self : Data
+            Reference to modified data structure
+
+        Notes
+        -----
+        - Array must match structure dimensions
+        - Warns if not all values are unpacked
+        """
+        
         
         # dont require dict to have numpy
         import numpy as np
@@ -717,4 +770,64 @@ class Data(dict):
         if not M.shape[-1] == _index[0]: warn('did not unpack all values',RuntimeWarning)
          
         # done!
-        return self      
+        return self     
+    
+    def do_recursive(self, method, other):
+        """
+        Apply method recursively to self and other
+
+        Parameters
+        ----------
+        method : callable
+            Method to apply recursively
+        other : Data
+            Other data structure to process with
+
+        Returns
+        -------
+        result
+            Result of recursive method application
+
+        Notes
+        -----
+        - Recursively processes nested data structures
+        - Used for operations between two Data instances
+        """
+        
+        # result data structure
+        klass = self.__class__
+        if isinstance(klass,Data):
+            klass = Data
+        result = klass()
+    
+        # the update function
+        def do_operation(A,B,C):
+            for k,a in A.items():
+                if isinstance(B,Data):
+                    if k in B:
+                        b = B[k]
+                    else: 
+                        C[k] = a
+                        continue
+                else:
+                    b = B
+                # recursion
+                if isinstance(a,Data):
+                    c = klass()
+                    C[k] = c
+                    do_operation(a,b,c)
+                # method
+                else:
+                    if b is None:
+                        c = method(a)
+                    else:
+                        c = method(a,b)
+                    if not c is None:
+                        C[k] = c
+                #: if type
+            #: for each key,value
+    
+        # do the update!
+        do_operation(self,other,result)    
+    
+        return result

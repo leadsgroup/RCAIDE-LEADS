@@ -1,4 +1,4 @@
-# DiffedData.py
+# RCAIDE/Framework/Core/Diffed_Data.py
 #
 # Created:  Feb 2015, T. Lukacyzk
 # Modified: Feb 2016, T. MacDonald
@@ -18,57 +18,60 @@ import numpy as np
 #  Config
 # ----------------------------------------------------------------------
 
+## @ingroup Core
 class Diffed_Data(Data):
-    """ This is for creating a data new class where a different copy is saved.
-        This is useful for creating a new configuration of a vehicle.
+    """
+    A data structure that tracks differences from a base configuration
 
-        Assumptions:
-        N/A
+    Parameters
+    ----------
+    base : Data, optional
+        Base configuration to track changes against
+        Default: None
 
-        Source:
-        N/A
-    """    
+    Attributes
+    ----------
+    tag : str
+        Configuration identifier, defaults to 'config'
+    _base : Data
+        Reference to base configuration
+    _diff : Data
+        Stored differences from base configuration
 
-    
+    Notes
+    -----
+    Used for creating modified configurations while only storing differences
+    from a base configuration.
+    """
+
     def __defaults__(self):
-        """ A stub for all classes that come later
-            
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
-        """  
+        """
+        Set default values for diffed data structure
+
+        Notes
+        -----
+        Initializes:
+        - tag as 'config'
+        - _base as empty Data()
+        - _diff as empty Data()
+        """
         self.tag    = 'config'
         self._base  = Data()
         self._diff  = Data()
         
     def __init__(self,base=None):
-        """ Initializes the new Diffed_Data() class through a deepcopy
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
+        """
+        Initialize with optional base configuration
+
+        Parameters
+        ----------
+        base : Data, optional
+            Base configuration to track changes against
+            Default: None
+
+        Notes
+        -----
+        Creates deep copy of base configuration
         """  
         if base is None: base = Data()
         self._base = base
@@ -76,22 +79,12 @@ class Diffed_Data(Data):
         Data.__init__(self,this)
         
     def store_diff(self):
-        """ Finds the differences and saves them
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
+        """
+        Store current differences from base configuration
+
+        Notes
+        -----
+        Computes and stores delta between current and base state
         """          
         delta = diff(self,self._base)
         self._diff = delta
@@ -101,59 +94,68 @@ class Diffed_Data(Data):
 # ----------------------------------------------------------------------
 
 class Container(ContainerBase):
-    """ A dict-type container with attribute, item and index style access
-        intended to hold a attribute-accessible list of Data(). This is unordered.
-        
-        Assumptions:
-        N/A
-        
-        Source:
-        N/A
-        
     """
+    Container for managing multiple diffed configurations
+
+    Notes
+    -----
+    - Unordered container for Diffed_Data instances
+    - Handles storing and applying differences for contained configurations
+    """
+
     def append(self,value):
-        """ Appends the value to the containers
-        
-            Assumptions:
-            None
-        
-            Source:
-            N/A
-        
-            Inputs:
-            self
-        
-            Outputs:
-            N/A
-            
-            Properties Used:
-            N/A
+        """
+        Add new configuration to container
+
+        Parameters
+        ----------
+        value : Diffed_Data
+            Configuration to append
+
+        Notes
+        -----
+        Stores differences before appending
         """         
         try: value.store_diff()
         except AttributeError: pass
         ContainerBase.append(self,value)
+        
+    def pull_base(self):
+        """
+        Update all configurations from their bases
+
+        Notes
+        -----
+        Calls pull_base() on each contained configuration
+        """          
+        for config in self:
+            try: config.pull_base()
+            except AttributeError: pass
 
     def store_diff(self):
-        """ Finds the differences and saves them
-    
-            Assumptions:
-            N/A
-    
-            Source:
-            N/A
-    
-            Inputs:
-            N/A
-    
-            Outputs:
-            N/A
-    
-            Properties Used:
-            N/A    
+        """
+        Store differences for all configurations
+
+        Notes
+        -----
+        Calls store_diff() on each contained configuration
         """          
         for config in self:
             try: config.store_diff()
-            except AttributeError: pass 
+            except AttributeError: pass
+    
+    def finalize(self):
+        """
+        Finalize all configurations
+
+        Notes
+        -----
+        - Calls finalize() on each configuration
+        - Effectively performs pull_base() on each
+        """        
+        for config in self:
+            try: config.finalize()
+            except AttributeError: pass
 
 
 # ------------------------------------------------------------
@@ -166,31 +168,42 @@ Diffed_Data.Container = Container
 #  Diffing Function
 # ------------------------------------------------------------
 
-def diff(A,B):
-    """ The magic diff function that makes Diffed_Data() work
+def diff(A, B):
+    """
+    Compute differences between two data structures
 
-        Assumptions:
-        N/A
+    Parameters
+    ----------
+    A : Data
+        First data structure to compare
+    B : Data
+        Second data structure to compare against
 
-        Source:
-        N/A
+    Returns
+    -------
+    result : Data
+        Data structure containing only the differences between A and B
 
-        Inputs:
-        A
-        B
+    Notes
+    -----
+    - Recursively compares nested Data structures
+    - Only stores values that differ between A and B
+    - Handles both Data and DataOrdered types
+    - Skips special attributes (_base, _diff) for Diffed_Data instances
 
-        Outputs:
-        Result
-
-        Properties Used:
-        N/A    
-    """      
-
+    Examples
+    --------
+    >>> base = Data()
+    >>> modified = Data()
+    >>> modified.x = 1 
+    >>> delta = diff(modified, base)
+    >>> print(delta.x)  # Shows 1
+    """
     keys = set([])
-    keys.update( A.keys() )
-    keys.update( B.keys() )
+    keys.update(A.keys())
+    keys.update(B.keys())
 
-    if isinstance(A,Diffed_Data):
+    if isinstance(A, Diffed_Data):
         keys.remove('_base')
         keys.remove('_diff')
 
@@ -198,24 +211,20 @@ def diff(A,B):
     result.clear()
 
     for key in keys:
-        va = A.get(key,None)
-        vb = B.get(key,None)
-        if isinstance(va,Data) and isinstance(vb,Data):
-            sub_diff = diff(va,vb)
+        va = A.get(key, None)
+        vb = B.get(key, None)
+        if isinstance(va, Data) and isinstance(vb, Data):
+            sub_diff = diff(va, vb)
             if sub_diff:
                 result[key] = sub_diff
-
-        elif isinstance(va,Data) or isinstance(vb,Data):
+        elif isinstance(va, Data) or isinstance(vb, Data):
             result[key] = va
-            
-        elif isinstance(va,DataOrdered) and isinstance(vb,DataOrdered):
-            sub_diff = diff(va,vb)
+        elif isinstance(va, DataOrdered) and isinstance(vb, DataOrdered):
+            sub_diff = diff(va, vb)
             if sub_diff:
                 result[key] = sub_diff
-
-        elif isinstance(va,DataOrdered) or isinstance(vb,DataOrdered):
-            result[key] = va        
-
+        elif isinstance(va, DataOrdered) or isinstance(vb, DataOrdered):
+            result[key] = va
         elif not np.all(va == vb):
             result[key] = va
 

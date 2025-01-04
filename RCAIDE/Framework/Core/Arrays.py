@@ -13,64 +13,74 @@ array_type  = np.ndarray
 matrix_type = np.matrixlib.defmatrix.matrix
  
 def atleast_2d_col(A):
-    """Makes a 2D array in column format
+    """
+    Convert array to 2D column format
 
-    Assumptions:
-    None
+    Parameters
+    ----------
+    A : array_like
+        Input array to convert
 
-    Source:
-    N/A
+    Returns
+    -------
+    ndarray
+        2D array with shape (N,1)
 
-    Inputs:
-    A      [1-D Array]
-
-    Outputs:
-    A      [2-D Array]
-
-    Properties Used:
-    N/A
-    """       
-    return atleast_2d(A,'col')
+    Notes
+    -----
+    Ensures array has at least 2 dimensions with data in column format
+    """
+    return atleast_2d(A, 'col')
 
 
 def atleast_2d_row(A):
-    """Makes a 2D array in row format
+    """
+    Convert array to 2D row format
 
-    Assumptions:
-    None
+    Parameters
+    ----------
+    A : array_like
+        Input array to convert
 
-    Source:
-    N/A
+    Returns
+    -------
+    ndarray
+        2D array with shape (1,N)
 
-    Inputs:
-    A      [1-D Array]
-
-    Outputs:
-    A      [2-D Array]
-
-    Properties Used:
-    N/A
-    """       
-    return atleast_2d(A,'row')
+    Notes
+    -----
+    Ensures array has at least 2 dimensions with data in row format
+    """
+    return atleast_2d(A, 'row')
 
 
-def atleast_2d(A,oned_as='row'):
-    """ensures A is an array and at least of rank 2
+def atleast_2d(A, oned_as='row'):
+    """
+    Ensure array is at least 2-dimensional
 
-    Assumptions:
-    Defaults as row
+    Parameters
+    ----------
+    A : array_like
+        Input array to convert
+    oned_as : str, optional
+        Format for 1D arrays: 'row' or 'col'
+        Default: 'row'
 
-    Source:
-    N/A
+    Returns
+    -------
+    ndarray
+        Array with at least 2 dimensions
 
-    Inputs:
-    A      [1-D Array]
+    Raises
+    ------
+    Exception
+        If oned_as is not 'row' or 'col'
 
-    Outputs:
-    A      [2-D Array]
-
-    Properties Used:
-    N/A
+    Notes
+    -----
+    - Converts non-array inputs to numpy arrays
+    - Expands 1D arrays according to oned_as parameter
+    - Leaves higher dimensional arrays unchanged
     """       
     
     # not an array yet
